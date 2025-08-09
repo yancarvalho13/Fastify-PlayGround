@@ -1,4 +1,5 @@
 
+import { error } from "console";
 import type { UUID } from "crypto";
 import { fastify, type FastifyInstance, type FastifyPluginOptions } from "fastify";
 import { Client } from "pg";
@@ -9,12 +10,14 @@ interface user {
     email: string
 }
 
-const yan: user = {
-    name: "Yan Carvalho",
-    email: "yansilva@gmail.com"
+interface todo {
+    title: string,
+    tasks: task[]
 }
 
-
+interface task {
+    description: string,
+}
 
 
 async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
@@ -66,6 +69,39 @@ async function routes(fastify: FastifyInstance, options: FastifyPluginOptions) {
         return rows[0]
     }
     );
+
+    type TodoBody = {
+        title: string;
+        tasks: {description: string}[];
+    }
+
+    fastify.post<{Params: {user_id: string},Body: TodoBody}>('/todo/:user_id', async(req, repl) => {
+        const {user_id} = req.params;
+        const {title, tasks = []} = req.body;
+
+        //Insete o TODO E pega o id
+        try{
+
+            const {rows} = await fastify.pg.query(
+                "INSERT INTO todo (title,user_id) VALUES ($1, $2) RETURNING id",
+                [title, user_id]
+            );
+            const todoId = rows[0].id;
+            
+            for (const t of tasks){
+                await fastify.pg.query("INSERT INTO tasks (todo_id, description) VALUES ($1, $2)",
+                [todoId, t.description]
+            );
+        }
+        
+        
+        return repl.code(201).send(todoId);
+        }catch (err) {
+            req.log.error(err)
+            return repl.code(500).send({error: "Erro ao criar todo e tasks"})
+        }
+
+    })
 
 }
 

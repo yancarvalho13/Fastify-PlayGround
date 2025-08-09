@@ -11,7 +11,9 @@ dist/index.d.ts.map
 dist/index.js
 dist/index.js.map
 DB_data/
-
+node_modules/
+dist/
+dist/firstRoute.js.map
 docker-compose.yml
 node_modules/.package-lock.json
 node_modules/.bin/glob
